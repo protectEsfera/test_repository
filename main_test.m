@@ -1,57 +1,37 @@
-img = imread('tmp.png');
-imshow(img);
+% init treshold
+th_down = 0.3;
+th_up = 0.36;
+
+% Capture an image from the drone's camera
+frame = imread('문제3.png')
+subplot(2,1,1);
+imshow(frame);
 pause(1);
 
-gray_image = rgb2gray(img);
-canny_image = edge(gray_image,'canny');
-imshow(canny_image);
-
-% threshold initialization
-th_down = 0.5;
-th_up = 0.55;
-subplot(2,1,1), subimage(img);
-
-% find threshold
-while 1
-
-    hsv = rgb2hsv(img);
-    h = hsv(:,:,1);
-
-    if(th_up - th_down) < 0
-        binary_res = (th_down<h)*(h<th_up);
-    else
-        binary_res = (th_down<h)&(h<th_up);
-    end
-
-    subplot(2,1,2), subimage(binary_res);
-    disp("th_down: " + th_down + "  th_up" + th_up);
-
-    x = input("+:e, -:d, quit:q     ", 's');
-    disp(newline);
-
-    if x=='q'
-        disp("* final th_down: " + th_down + " fianl th_up" + th_up);
-        break
-    elseif x=='e'
-        th_down = th_down + 0.025;
-        th_up = th_up + 0.025;
-    elseif x == 'd'
-        th_down = th_down - 0.025;
-        th_up = th_up - 0.025;
-    end
-
-    if th_down > 1
-        th_down = th_down-1;
-    elseif th_down < 0
-        th_down = th_down+1;
-    end
-
-    if th_up > 1
-        th_up = th_up - 1;
-    elseif th_up < 0
-        th_up = th_up + 1;
-    end
+% Get the hue data of the image  
+hsv = rgb2hsv(frame);
+h = hsv(:,:,1);
+    
+    
+% imshow current binary image
+if (th_up - th_down) < 0
+    binary_res = (th_down<h)+(h<th_up);
+else
+    binary_res = (th_down<h)&(h<th_up);
 end
+subplot(2,1,2);
+imshow(binary_res);                                           
+disp("th_down: " + th_down + "   th_up: " + th_up);
+
+% [B,L] = bwboundaries(binary_res,'noholes');
+
+% bwareafilt: 가장 큰 영역만 남기기
+binary_res = bwareafilt(binary_res, 1);
+[B,L,N] = bwboundaries(binary_res);
+binary_res= imcomplement(binary_res);
+
+imshow(binary_res); 
+hold on;
 
 % median filtering
 median_im = medfilt2(binary_res, [3,3]);
@@ -65,7 +45,7 @@ bw = bwlabel(filtered_im, 8);
 % 자르기 Stats
 stats = regionprops(bw, 'BoundingBox', 'Centroid');
 
-imshow(img)
+imshow(frame)
 
 hold on
 
@@ -81,3 +61,4 @@ for object = 1:length(stats)
     y_data = num2str(round(bc(2)));
 end
 
+axis equal
